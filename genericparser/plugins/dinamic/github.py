@@ -23,7 +23,21 @@ class ParserGithub(GenericStaticABC):
             print("error making request to github api in url: ", url, e)
         return response.json() if response.status_code == 200 else {}
 
-    def _get_ci_feedback_times(self, base_url, token=None):
+    def _should_compute_workflow_run(self, run, filters):
+        if filters is None:
+            return True
+        if run["name"] not in filters["workflows"]:
+            return False
+        if filters["dates"] is not None:
+            dates = filters["dates"].split("-")
+            run_date = datetime.strptime(run["run_started_at"], "%Y-%m-%dT%H:%M:%SZ")
+            start = datetime.strptime(dates[0], "%d/%m/%Y")
+            end = datetime.strptime(dates[1], "%d/%m/%Y")
+            if run_date < start or run_date > end:
+                return False
+        return True
+
+    def _get_ci_feedback_times(self, base_url, token=None, filters=None):
         ci_feedback_times = []
         url = f"{base_url}/actions/runs"
         response = self._make_request(url, token)
@@ -32,8 +46,11 @@ class ParserGithub(GenericStaticABC):
             workflow_runs = response.get("workflow_runs", [])
 
             for run in workflow_runs:
+                if not self._should_compute_workflow_run(run, filters):
+                    continue
+
                 started_at = datetime.fromisoformat(
-                    run["created_at"].replace("Z", "+00:00")
+                    run["run_started_at"].replace("Z", "+00:00")
                 )
                 completed_at = datetime.fromisoformat(
                     run["updated_at"].replace("Z", "+00:00")
@@ -50,51 +67,48 @@ class ParserGithub(GenericStaticABC):
         else:
             return False
 
-    # Get statistics metrics functions
-    def _get_statistics_weekly_code_frequency(self, base_url, token=None):
-        values = [0] * 7
-        metrics = [
-            "commits_on_sunday",
-            "commits_on_monday",
-            "commits_on_tuesday",
-            "commits_on_wednesday",
-            "commits_on_thursday",
-            "commits_on_friday",
-            "commits_on_saturday",
-        ]
-        url = f"{base_url}/stats/punch_card"
-        response = self._make_request(url, token)
-        for commit_count in response or []:
-            values[commit_count[0]] += commit_count[2]
+    def _check_requests(self, base_url, params, values, token=None):
+        results = []
+        for value in values:
+            url_value = value.replace(" ", "%20")
+            url = f"{base_url}/{params}{url_value}"
+            response = self._make_request(url, token)
+            if response and isinstance(response, list):
+                for result in response:
+                    if result not in results:
+                        results.append(result)
+        return results
 
-        return {"metrics": metrics, "values": values}
+    def _is_valid_time(self, value, dates):
+        date_since, date_until = dates
 
-    # Get statistics metrics functions
-    def _get_statistics_weekly_commit_activity(self, base_url, token=None):
-        values = [0] * 7
-        metrics = [
-            "commits_on_sunday",
-            "commits_on_monday",
-            "commits_on_tuesday",
-            "commits_on_wednesday",
-            "commits_on_thursday",
-            "commits_on_friday",
-            "commits_on_saturday",
-        ]
-        url = f"{base_url}/stats/punch_card"
-        response = self._make_request(url, token)
-        for commit_count in response or []:
-            values[commit_count[0]] += commit_count[-1]
+        created_at = datetime.strptime(value["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+        closed_at = datetime.strptime(value["closed_at"], "%Y-%m-%dT%H:%M:%SZ") if value["closed_at"] else None
+        since = datetime.strptime(date_since, "%d/%m/%Y")
+        until = datetime.strptime(date_until, "%d/%m/%Y")
 
-        return {"metrics": metrics, "values": values}
+        return ((created_at <= until)
+                and (closed_at is None
+                or (closed_at is not None and closed_at >= since)))
 
-    def _get_pull_metrics_by_threshold(self, base_url, token=None):
+    def _get_throughput(self, base_url, token=None, filters=None):
         values = []
-        url = f"{base_url}/pulls?state=all"
-        response = self._make_request(url, token)
-        pull_requests = response if isinstance(response, list) else []
-        total_issues = len(pull_requests)
-        resolved_issues = sum(1 for pr in pull_requests if pr["state"] == "closed")
+        issues = []
+        label_list = filters["labels"].split(",") if filters and filters["labels"] else []
+        dates = filters["dates"].split("-") if filters and filters["dates"] else None
+        response = self._check_requests(
+            base_url,
+            "issues?state=all&labels=",
+            label_list,
+            token,
+        )
+
+        for issue in response:
+            if dates is None or self._is_valid_time(issue, dates):
+                issues.append(issue)
+
+        total_issues = len(issues)
+        resolved_issues = sum(1 for issue in issues if issue["state"] == "closed")
 
         values.extend(
             [
@@ -109,68 +123,9 @@ class ParserGithub(GenericStaticABC):
             "values": values,
         }
 
-    # Get statistics metrics
-    def _get_statistics_metrics(self, base_url, token=None):
-        return {
-            **self._get_statistics_weekly_code_frequency(base_url),
-        }
-
-    #  get all Pull metrics
-    def _get_all_pull_metrics(self, base_url, token=None):
-        values = []
-        metrics_to_get = [
-            "issue_url",
-            "commits_url",
-            "state",
-            "number",
-            "draft",
-            "created_at",
-            "updated_at",
-            "closed_at",
-            "merged_at",
-        ]
-        metrics = []
-        url = f"{base_url}/pulls?state=all"  # Fetch all pull requests (open and closed)
-        response = self._make_request(url, token)
-        pull_requests = response if isinstance(response, list) else []
-
-        for pull_request in pull_requests:
-            metric_values = [
-                {"metric": metric, "value": pull_request.get(metric, None)}
-                for metric in metrics_to_get
-            ]
-            metrics.append(f"pull_request_{pull_request.get('number')}")
-            values.append(metric_values)
-
-        return {"metrics": metrics, "values": values}
-
-    # Get comunity metrics
-    def _get_comunity_metrics(self, base_url, token=None):
-        values = []
-        metrics = [
-            "health_percentage",
-            "updated_at",
-            "created_at",
-            "watchers_count",
-            "forks_count",
-            "open_issues_count",
-            "forks",
-            "open_issues",
-            "watchers",
-            "subscribers_count",
-            "size",
-        ]
-        url = f"{base_url}/community/profile"
-        response = {
-            **self._make_request(base_url, token),
-            **self._make_request(url, token),
-        }
-        for metric in metrics:
-            values.append(response.get(metric, None))
-
-        return {"metrics": metrics, "values": values}
-
-    def extract(self, input_file):
+    def extract(self, **kwargs):
+        input_file = kwargs.get("input_file")
+        filters = kwargs.get("filters")
         token_from_github = (
             input_file.get("token", None)
             if type(input_file) is dict
@@ -187,29 +142,14 @@ class ParserGithub(GenericStaticABC):
         owner, repository_name = repository.split("/")
         url = f"https://api.github.com/repos/{owner}/{repository_name}"
 
-        # Get comunity metrics
-        return_of_comunity_metrics = self._get_comunity_metrics(url, token_from_github)
-        metrics.extend(return_of_comunity_metrics["metrics"])
-        values.extend(return_of_comunity_metrics["values"])
-
-        return_of_get_statistics_weekly_commit_activity = (
-            self._get_statistics_weekly_commit_activity(url, token_from_github)
+        return_of_get_throughput = self._get_throughput(
+            url, token_from_github, filters
         )
-        metrics.extend(return_of_get_statistics_weekly_commit_activity["metrics"])
-        values.extend(return_of_get_statistics_weekly_commit_activity["values"])
-
-        return_of_get_pull_metrics_by_threshold = self._get_pull_metrics_by_threshold(
-            url, token_from_github
-        )
-        metrics.extend(return_of_get_pull_metrics_by_threshold["metrics"])
-        values.extend(return_of_get_pull_metrics_by_threshold["values"])
-
-        return_of_get_pull_metrics = self._get_all_pull_metrics(url, token_from_github)
-        metrics.extend(return_of_get_pull_metrics["metrics"])
-        values.extend(return_of_get_pull_metrics["values"])
+        metrics.extend(return_of_get_throughput["metrics"])
+        values.extend(return_of_get_throughput["values"])
 
         return_of_get_ci_feedback_times = self._get_ci_feedback_times(
-            url, token_from_github
+            url, token_from_github, filters
         )
 
         if return_of_get_ci_feedback_times:

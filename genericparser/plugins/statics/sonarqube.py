@@ -2,7 +2,8 @@ from genericparser.plugins.domain.generic_class import GenericStaticABC
 
 
 class ParserSonarQube(GenericStaticABC):
-    def extract(self, input_file):
+    def extract(self, **kwargs):
+        input_file = kwargs.get("input_file")
         metrics = []
         keys = []
         values = []
