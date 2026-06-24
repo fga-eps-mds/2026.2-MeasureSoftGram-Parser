@@ -14,4 +14,3 @@ def test_extract_abstract_method_uses_var_keyword_args():
 
     assert len(non_self_params) == 1
     assert non_self_params[0].kind == inspect.Parameter.VAR_KEYWORD
-    
