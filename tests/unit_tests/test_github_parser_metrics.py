@@ -1,3 +1,4 @@
+import os
 import pytest
 from genericparser.plugins.dinamic.github import ParserGithub
 from tests.mockfiles.expected_return_values import (
@@ -5,6 +6,7 @@ from tests.mockfiles.expected_return_values import (
     EXPECT_EXTRACT_METRICS_DATE_NONE,
 )
 import json
+from unittest.mock import patch
 
 
 # @pytest.mark.parametrize()
@@ -53,3 +55,69 @@ def test_extract_method_date_none():
         })
         == EXPECT_EXTRACT_METRICS_DATE_NONE
     )
+
+
+# Token precedence tests
+
+def test_token_from_input_file_dict():
+    """Token from input_file dict takes highest precedence."""
+    captured = {}
+
+    def capturing_request(url, token=None):
+        captured["token"] = token
+        return mock_requests(url, token)
+
+    parser = ParserGithub(token="instance-token")
+    parser._make_request = capturing_request
+
+    with patch.dict(os.environ, {"GITHUB_TOKEN": "env-token"}):
+        parser.extract(**{
+            "input_file": {
+                "repository": "fga-eps-mds/2023-1-MeasureSoftGram-DOC",
+                "token": "dict-token",
+            },
+            "filters": {"labels": "US", "workflows": ["pages build and deployment"], "dates": None},
+        })
+
+    assert captured["token"] == "dict-token"
+
+
+def test_token_falls_back_to_env_when_dict_has_no_token():
+    """When input_file dict has no 'token', GITHUB_TOKEN env var is used."""
+    captured = {}
+
+    def capturing_request(url, token=None):
+        captured["token"] = token
+        return mock_requests(url, token)
+
+    parser = ParserGithub(token="instance-token")
+    parser._make_request = capturing_request
+
+    with patch.dict(os.environ, {"GITHUB_TOKEN": "env-token"}, clear=False):
+        parser.extract(**{
+            "input_file": {"repository": "fga-eps-mds/2023-1-MeasureSoftGram-DOC"},
+            "filters": {"labels": "US", "workflows": ["pages build and deployment"], "dates": None},
+        })
+
+    assert captured["token"] == "env-token"
+
+
+def test_token_falls_back_to_instance_when_no_dict_token_and_no_env():
+    """When input_file dict has no 'token' and GITHUB_TOKEN is unset, self.token is used."""
+    captured = {}
+
+    def capturing_request(url, token=None):
+        captured["token"] = token
+        return mock_requests(url, token)
+
+    parser = ParserGithub(token="instance-token")
+    parser._make_request = capturing_request
+
+    env_without_github = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
+    with patch.dict(os.environ, env_without_github, clear=True):
+        parser.extract(**{
+            "input_file": {"repository": "fga-eps-mds/2023-1-MeasureSoftGram-DOC"},
+            "filters": {"labels": "US", "workflows": ["pages build and deployment"], "dates": None},
+        })
+
+    assert captured["token"] == "instance-token"
