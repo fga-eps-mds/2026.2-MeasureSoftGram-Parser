@@ -127,9 +127,9 @@ class ParserGithub(GenericStaticABC):
         input_file = kwargs.get("input_file")
         filters = kwargs.get("filters")
         token_from_github = (
-            input_file.get("token", None)
-            if type(input_file) is dict
-            else None or os.environ.get("GITHUB_TOKEN", None) or self.token
+            (input_file.get("token") if isinstance(input_file, dict) else None)
+            or os.environ.get("GITHUB_TOKEN")
+            or self.token
         )
         repository = (
             input_file.get("repository", None)
