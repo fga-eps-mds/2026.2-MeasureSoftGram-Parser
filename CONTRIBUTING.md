@@ -17,6 +17,17 @@ Crie sua branch para trabalhar, ou faça um fork do repositório, caso seja um d
 
 Crie um pull request no Github, selecionando a branch `develop` como base e a sua branch como comparação.
 
+## Setup local
+
+Instale as dependências e rode os testes e o lint antes de abrir o PR. Há um
+`Makefile` com os atalhos:
+
+```bash
+make install   # pip install -r requirements.txt
+make test      # roda a suite via tox
+make lint      # flake8 (le a config em .flake8)
+```
+
 ## Revisões
 
 Se mudanças forem solicitadas, corrija-as e solicite uma nova revisão.
