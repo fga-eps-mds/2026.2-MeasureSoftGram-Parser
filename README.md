@@ -24,6 +24,26 @@ The MeasureSoftGram-Parser is responsible for parsing content from different sou
 pip install -r requirements.txt
 ```
 
+## How to run tests
+
+### Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run the test suite
+
+```bash
+tox
+```
+
+To run the tests for a specific package or file, pass it as an argument:
+
+```bash
+tox <PACKAGE OR FILE>
+```
+
 ## Contribute
 
 Do you want to contribute with our project? Access our [contribution guide](./CONTRIBUTING.md) where we explain how you do it.
