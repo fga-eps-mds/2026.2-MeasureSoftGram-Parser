@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 
 # @pytest.mark.parametrize()
-BASE_URL = "https://api.github.com/repos/fga-eps-mds/2023-1-MeasureSoftGram-DOC"
+BASE_URL = "https://api.github.com/repos/fga-eps-mds/MeasureSoftGram-DOC"
 
 
 def mock_requests(url, token=None):
@@ -35,7 +35,7 @@ def test_extract_method_all_filters():
     parserObject = get_object()
     assert (
         parserObject.extract(**{
-            "input_file": "fga-eps-mds/2023-1-MeasureSoftGram-DOC",
+            "input_file": "fga-eps-mds/MeasureSoftGram-DOC",
             "filters": {"labels": "US",
                         "workflows": ["pages build and deployment"],
                         "dates": "20/06/2023-15/07/2023"}
@@ -48,7 +48,7 @@ def test_extract_method_date_none():
     parserObject = get_object()
     assert (
         parserObject.extract(**{
-            "input_file": "fga-eps-mds/2023-1-MeasureSoftGram-DOC",
+            "input_file": "fga-eps-mds/MeasureSoftGram-DOC",
             "filters": {"labels": "US",
                         "workflows": ["pages build and deployment"],
                         "dates": None}
@@ -73,7 +73,7 @@ def test_token_from_input_file_dict():
     with patch.dict(os.environ, {"GITHUB_TOKEN": "env-token"}):
         parser.extract(**{
             "input_file": {
-                "repository": "fga-eps-mds/2023-1-MeasureSoftGram-DOC",
+                "repository": "fga-eps-mds/MeasureSoftGram-DOC",
                 "token": "dict-token",
             },
             "filters": {"labels": "US", "workflows": ["pages build and deployment"], "dates": None},
@@ -95,7 +95,7 @@ def test_token_falls_back_to_env_when_dict_has_no_token():
 
     with patch.dict(os.environ, {"GITHUB_TOKEN": "env-token"}, clear=False):
         parser.extract(**{
-            "input_file": {"repository": "fga-eps-mds/2023-1-MeasureSoftGram-DOC"},
+            "input_file": {"repository": "fga-eps-mds/MeasureSoftGram-DOC"},
             "filters": {"labels": "US", "workflows": ["pages build and deployment"], "dates": None},
         })
 
@@ -116,7 +116,7 @@ def test_token_falls_back_to_instance_when_no_dict_token_and_no_env():
     env_without_github = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
     with patch.dict(os.environ, env_without_github, clear=True):
         parser.extract(**{
-            "input_file": {"repository": "fga-eps-mds/2023-1-MeasureSoftGram-DOC"},
+            "input_file": {"repository": "fga-eps-mds/MeasureSoftGram-DOC"},
             "filters": {"labels": "US", "workflows": ["pages build and deployment"], "dates": None},
         })
 
