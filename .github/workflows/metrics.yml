@@ -2,14 +2,15 @@ name: Export de métricas
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main,develop]
     tags:
       - "v*"
   workflow_dispatch:
-
 jobs:
   release:
     runs-on: "ubuntu-latest"
+    env:
+      API_TOKEN: ${{ secrets.API_TOKEN_DOC }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -25,10 +26,10 @@ jobs:
         run: |
           git config --global user.email "${{secrets.USER_EMAIL}}"
           git config --global user.name "${{secrets.USER_NAME}}"
-          git clone --single-branch --branch main "https://x-access-token:${{secrets.API_TOKEN_DOC}}@github.com/fga-eps-mds/2024.1-MeasureSoftGram-DOC" doc
-          mkdir -p doc/analytics-raw-data
-          cp -R analytics-raw-data/*.json doc/analytics-raw-data
-          cd doc
+          git clone --single-branch --branch main "https://x-access-token:$API_TOKEN@github.com/fga-eps-mds/MeasureSoftGram-DOC" doc
+          mkdir -p doc/Analytics/data
+          cp -R analytics-raw-data/*.json doc/Analytics/data
+          cd doc/
           git add .
           git commit -m "Adicionando métricas do repositório ${{ github.event.repository.name }} ${{ github.ref_name }}"
           git push
@@ -38,6 +39,5 @@ jobs:
         uses: AButler/upload-release-assets@v2.0
         with:
           files: 'analytics-raw-data/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.TOKEN_GITHUB }}
           release-tag: ${{ github.ref_name }}
-  

@@ -22,5 +22,5 @@ jobs:
         run: pip install flake8
 
       - name: Run flake8
-        run: flake8 --extend-ignore=E501,W292,F401 
+        run: flake8 .
 
