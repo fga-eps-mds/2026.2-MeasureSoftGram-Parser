@@ -1,36 +1,6 @@
-# Guia de contribuição
+# Como contribuir
 
-## Primeiramente
+O Código de Conduta oficial do projeto MeasureSoftGram está centralizado no nosso repositório de documentação.
 
-Antes de enviar uma alteração para este repositório, se já não houver uma issue, crie uma a partir do template, e utilize as tags oferecidas para ajudar na identificação da issue. Certifique-se sobre as nossas políticas:
-
-- [Código de conduta]( https://github.com/fga-eps-mds/2021-2-MeasureSoftGram-Core/blob/main/code_of_conduct.md)
-- [Padrões no Github](https://fga-eps-mds.github.io/2021-2-MeasureSoftGram-Doc/docs/contribute/github_standards)
-- Critérios de aceitação devidamente cumpridos
-- Testes automatizados para tudo o que for alterado
-
-## Crie branches ou fork
-
-Crie sua branch para trabalhar, ou faça um fork do repositório, caso seja um desenvolvedor externo.
-
-## Crie pull request
-
-Crie um pull request no Github, selecionando a branch `develop` como base e a sua branch como comparação.
-
-## Setup local
-
-Instale as dependências e rode os testes e o lint antes de abrir o PR. Há um
-`Makefile` com os atalhos:
-
-```bash
-make install   # pip install -r requirements.txt
-make test      # roda a suite via tox
-make lint      # flake8 (le a config em .flake8)
-```
-
-## Revisões
-
-Se mudanças forem solicitadas, corrija-as e solicite uma nova revisão.
-
-**Muito obrigado por contribuir!!**
-
+Por favor, para ler nossas diretrizes de como contribuir, acesse: 
+[Como contribuir - MeasureSoftGram-Docs](https://github.com/fga-eps-mds/MeasureSoftGram-Docs/blob/main/docs/como-contribuir.mdx)
