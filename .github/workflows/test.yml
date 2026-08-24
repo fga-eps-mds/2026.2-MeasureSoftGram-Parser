@@ -30,12 +30,6 @@ jobs:
             - name: Rodar testes
               run: tox
 
-            - name: Scanner do SonarCloud
-              uses: SonarSource/sonarcloud-github-action@v2.3.0
-              env:
-                  GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
             - name: Envia cobertura para o Codecov
               uses: codecov/codecov-action@v4.0.1
               with:
@@ -45,5 +39,5 @@ jobs:
                   fail_ci_if_error: true
                   files: ./coverage.xml
                   flags: unittests
-                  name: 2026.1-MeasureSoftGram-Parser
+                  name: MeasureSoftGram-Parser
                   verbose: true
