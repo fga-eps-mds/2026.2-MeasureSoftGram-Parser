@@ -30,7 +30,7 @@ jobs:
         run: pytest --cov=genericparser --cov-report=xml --junitxml=junit.xml
 
       - name: Scanner do SonarCloud
-        uses: SonarSource/sonarcloud-github-action@v2.3.0
+        uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
