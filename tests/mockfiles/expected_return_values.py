@@ -13,7 +13,7 @@ EXPECT_EXTRACT_METRICS = {
         513,
         13,
     ],
-    "file_paths": "fga-eps-mds/2023-1-MeasureSoftGram-DOC",
+    "file_paths": "fga-eps-mds/MeasureSoftGram-DOC",
 }
 
 EXPECT_EXTRACT_METRICS_DATE_NONE = {
@@ -31,5 +31,5 @@ EXPECT_EXTRACT_METRICS_DATE_NONE = {
         595,
         15,
     ],
-    "file_paths": "fga-eps-mds/2023-1-MeasureSoftGram-DOC",
+    "file_paths": "fga-eps-mds/MeasureSoftGram-DOC",
 }
