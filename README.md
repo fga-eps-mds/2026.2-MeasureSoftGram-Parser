@@ -20,12 +20,12 @@ O principal objetivo do `MeasureSoftGram-Parser` é consumir e interpretar dados
 
 Suas responsabilidades incluem:
 - **Coleta de Métricas:** Interagir com APIs de serviços de análise de código para extrair dados de qualidade (como *Code Smells*, *Bugs*, vulnerabilidades, cobertura de testes, etc.).
-- **Padronização (Parsing):** Traduzir e normalizar esses dados heterogêneos para um formato padrão, garantindo que o serviço principal (Core) do MeasureSoftGram consiga processá-los e gerar as visualizações gráficas e relatórios finais.
+- **Padronização (Parsing):** Traduzir e normalizar esses dados heterogêneos para um formato padrão.
 - **Extensibilidade:** Facilitar a integração contínua de novas ferramentas analíticas ao projeto no futuro, mantendo a responsabilidade de extração desacoplada do resto do sistema.
 
 A documentação completa, instruções de instalação e o guia oficial deste projeto estão centralizados no nosso repositório de documentação.
 
-Acessse a documentação completa por aqui:
+Acesse a documentação completa por aqui:
 [Documentação Completa](https://fga-eps-mds.github.io/MeasureSoftGram-Docs/docs/intro/)
 
 
