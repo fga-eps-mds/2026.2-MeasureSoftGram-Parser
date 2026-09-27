@@ -23,6 +23,34 @@ Suas responsabilidades incluem:
 - **Padronização (Parsing):** Traduzir e normalizar esses dados heterogêneos para um formato padrão.
 - **Extensibilidade:** Facilitar a integração contínua de novas ferramentas analíticas ao projeto no futuro, mantendo a responsabilidade de extração desacoplada do resto do sistema.
 
+## Formato padrão de saída
+
+O parser retorna um dicionário em que cada chave identifica um projeto ou componente/arquivo, e seu valor é uma lista de métricas:
+
+```json
+{
+	"fga-eps-mds_2026.2-MeasureSoftGram-Service": [
+		{"metric": "bugs", "value": "0"},
+		{"metric": "code_smells", "value": "72"},
+		{"metric": "cognitive_complexity", "value": "598"},
+		{"metric": "complexity", "value": "737"},
+		{"metric": "coverage", "value": "82.4"},
+		{"metric": "duplicated_lines_density", "value": "1.1"},
+		{"metric": "files", "value": "109"},
+		{"metric": "ncloc", "value": "6227"},
+		{"metric": "security_hotspots", "value": "0"},
+		{"metric": "sqale_debt_ratio", "value": "0.2"},
+		{"metric": "sqale_index", "value": "336"},
+		{"metric": "test_errors", "value": "0"},
+		{"metric": "test_failures", "value": "0"},
+		{"metric": "violations", "value": "98"},
+		{"metric": "vulnerabilities", "value": "26"}
+	]
+}
+```
+
+O exemplo contém todas as métricas extraídas para o projeto e para o arquivo mostrado. A presença de cada métrica pode variar conforme os dados de entrada.
+
 A documentação completa, instruções de instalação e o guia oficial deste projeto estão centralizados no nosso repositório de documentação.
 
 Acesse a documentação completa por aqui:
