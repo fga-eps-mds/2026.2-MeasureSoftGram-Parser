@@ -17,6 +17,7 @@ jobs:
         id: release
         with:
           release-type: python
+          target-branch: main
 
       - name: Checkout do código pós-release
         if: ${{ steps.release.outputs.release_created }}
