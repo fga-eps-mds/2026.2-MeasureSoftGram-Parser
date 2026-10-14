@@ -6,10 +6,10 @@ from tests.mockfiles.expected_return_values import (
     EXPECT_EXTRACT_METRICS_DATE_NONE,
 )
 import json
+import requests
 from unittest.mock import patch
 
 
-# @pytest.mark.parametrize()
 BASE_URL = "https://api.github.com/repos/fga-eps-mds/MeasureSoftGram-DOC"
 
 
@@ -121,3 +121,13 @@ def test_token_falls_back_to_instance_when_no_dict_token_and_no_env():
         })
 
     assert captured["token"] == "instance-token"
+
+
+def test_make_request_returns_empty_dict_on_request_exception():
+    parser = ParserGithub()
+
+    with patch(
+        "genericparser.plugins.dinamic.github.requests.get",
+        side_effect=requests.exceptions.ConnectionError,
+    ):
+        assert parser._make_request(BASE_URL) == {}

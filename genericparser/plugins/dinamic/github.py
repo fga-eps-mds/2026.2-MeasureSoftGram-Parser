@@ -19,8 +19,8 @@ class ParserGithub(GenericStaticABC):
             headers["Authorization"] = f"Bearer {token}"
         try:
             response = requests.get(url, headers=headers)
-        except Exception as e:
-            print("error making request to github api in url: ", url, e)
+        except requests.exceptions.RequestException:
+            return {}
         return response.json() if response.status_code == 200 else {}
 
     def _should_compute_workflow_run(self, run, filters):
