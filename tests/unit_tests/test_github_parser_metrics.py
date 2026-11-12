@@ -131,3 +131,68 @@ def test_make_request_returns_empty_dict_on_request_exception():
         side_effect=requests.exceptions.ConnectionError,
     ):
         assert parser._make_request(BASE_URL) == {}
+
+
+class RespostaFake:
+    def __init__(self, status_code, corpo):
+        self.status_code = status_code
+        self._corpo = corpo
+
+    def json(self):
+        return self._corpo
+
+
+def test_make_request_envia_o_token_no_cabecalho():
+    with patch(
+        "genericparser.plugins.dinamic.github.requests.get",
+        return_value=RespostaFake(200, {"ok": True}),
+    ) as get:
+        assert ParserGithub()._make_request(BASE_URL, token="segredo") == {"ok": True}
+
+    assert get.call_args.kwargs["headers"]["Authorization"] == "Bearer segredo"
+
+
+def test_make_request_devolve_vazio_quando_a_api_nao_responde_200():
+    with patch(
+        "genericparser.plugins.dinamic.github.requests.get",
+        return_value=RespostaFake(404, {"message": "Not Found"}),
+    ):
+        assert ParserGithub()._make_request(BASE_URL) == {}
+
+
+def test_sem_filtros_toda_execucao_de_ci_entra_na_conta():
+    assert ParserGithub()._should_compute_workflow_run({"name": "qualquer"}, None) is True
+
+
+def test_execucao_de_workflow_fora_da_lista_fica_de_fora():
+    filtros = {"workflows": ["test"], "dates": None}
+
+    assert ParserGithub()._should_compute_workflow_run({"name": "deploy"}, filtros) is False
+
+
+def test_check_requests_ignora_resposta_que_nao_e_lista_e_repetidos():
+    respostas = {
+        f"{BASE_URL}/issues?state=all&labels=US": [{"id": 1}, {"id": 2}],
+        f"{BASE_URL}/issues?state=all&labels=Bug%20fix": [{"id": 2}, {"id": 3}],
+        f"{BASE_URL}/issues?state=all&labels=vazio": {},
+    }
+    parser = ParserGithub()
+    parser._make_request = lambda url, token=None: respostas[url]
+
+    resultado = parser._check_requests(BASE_URL, "issues?state=all&labels=", ["US", "Bug fix", "vazio"])
+
+    assert resultado == [{"id": 1}, {"id": 2}, {"id": 3}]
+
+
+def test_extract_sem_execucoes_de_ci_traz_so_a_vazao():
+    parser = ParserGithub()
+    parser._get_throughput = lambda *a, **k: {"metrics": ["total_issues"], "values": [0]}
+    parser._get_ci_feedback_times = lambda *a, **k: False
+
+    resultado = parser.extract(input_file="fga-eps-mds/MeasureSoftGram-DOC", filters=None)
+
+    assert resultado == {
+        "metrics": ["total_issues"],
+        "values": [0],
+        "file_paths": "fga-eps-mds/MeasureSoftGram-DOC",
+    }
