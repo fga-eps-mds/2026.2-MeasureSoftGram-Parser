@@ -7,8 +7,10 @@ from genericparser.genericparser import GenericParser
 
 
 def test_parse_recusa_tipo_de_entrada_desconhecido():
+    parser = GenericParser()
+
     with pytest.raises(Exception, match="Type not accepted by parser"):
-        GenericParser().parse(input_value={}, type_input="gitlab")
+        parser.parse(input_value={}, type_input="gitlab")
 
 
 def test_parse_usa_direto_o_dataframe_devolvido_pelo_plugin():

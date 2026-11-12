@@ -21,13 +21,17 @@ RETORNO_VALIDO = {"metrics": ["m"], "values": [1], "file_paths": ["a.py"]}
 
 
 def test_extract_da_classe_base_levanta_not_implemented():
+    plugin = ParserFake()
+
     with pytest.raises(NotImplementedError):
-        GenericStaticABC.extract(ParserFake())
+        GenericStaticABC.extract(plugin)
 
 
 def test_parser_exige_input_value():
+    plugin = ParserFake(RETORNO_VALIDO)
+
     with pytest.raises(Exception, match="kwargs must have input_value key"):
-        ParserFake(RETORNO_VALIDO).parser(filters=None)
+        plugin.parser(filters=None)
 
 
 def test_parser_repassa_entrada_e_filtros_ao_extract():
@@ -58,5 +62,7 @@ def test_texto_que_nao_e_arquivo_volta_como_veio():
     ],
 )
 def test_retorno_invalido_do_plugin_levanta_erro(retorno, mensagem):
+    plugin = ParserFake()
+
     with pytest.raises(Exception, match=mensagem):
-        ParserFake().validate_return_type(retorno)
+        plugin.validate_return_type(retorno)
