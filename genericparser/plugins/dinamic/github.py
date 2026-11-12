@@ -3,6 +3,9 @@ from genericparser.plugins.domain.generic_class import GenericStaticABC
 import requests
 from datetime import datetime
 
+GITHUB_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+FILTER_DATE_FORMAT = "%d/%m/%Y"
+
 
 class ParserGithub(GenericStaticABC):
     token = None
@@ -30,9 +33,9 @@ class ParserGithub(GenericStaticABC):
             return False
         if filters["dates"] is not None:
             dates = filters["dates"].split("-")
-            run_date = datetime.strptime(run["run_started_at"], "%Y-%m-%dT%H:%M:%SZ")
-            start = datetime.strptime(dates[0], "%d/%m/%Y")
-            end = datetime.strptime(dates[1], "%d/%m/%Y")
+            run_date = datetime.strptime(run["run_started_at"], GITHUB_DATETIME_FORMAT)
+            start = datetime.strptime(dates[0], FILTER_DATE_FORMAT)
+            end = datetime.strptime(dates[1], FILTER_DATE_FORMAT)
             if run_date < start or run_date > end:
                 return False
         return True
@@ -82,10 +85,10 @@ class ParserGithub(GenericStaticABC):
     def _is_valid_time(self, value, dates):
         date_since, date_until = dates
 
-        created_at = datetime.strptime(value["created_at"], "%Y-%m-%dT%H:%M:%SZ")
-        closed_at = datetime.strptime(value["closed_at"], "%Y-%m-%dT%H:%M:%SZ") if value["closed_at"] else None
-        since = datetime.strptime(date_since, "%d/%m/%Y")
-        until = datetime.strptime(date_until, "%d/%m/%Y")
+        created_at = datetime.strptime(value["created_at"], GITHUB_DATETIME_FORMAT)
+        closed_at = datetime.strptime(value["closed_at"], GITHUB_DATETIME_FORMAT) if value["closed_at"] else None
+        since = datetime.strptime(date_since, FILTER_DATE_FORMAT)
+        until = datetime.strptime(date_until, FILTER_DATE_FORMAT)
 
         return ((created_at <= until)
                 and (closed_at is None
