@@ -67,6 +67,44 @@ class ParserGithub(GenericStaticABC):
         else:
             return False
 
+    def _get_security_alerts(self, base_url, token=None):
+        """
+        Conta os alertas de seguranca abertos e fechados do repositorio.
+
+        Repositorio sem Dependabot habilitado, sem permissao de
+        security_events ou em plano que nao expoe alertas responde 403/404, e
+        nesse caso as metricas ficam de fora: apenas a medida dependente deixa
+        de ser calculada, sem interromper a extracao das demais. Lista vazia e
+        resposta valida e significa repositorio sem alerta algum.
+        """
+        per_page = 100
+        page = 1
+        open_alerts = 0
+        closed_alerts = 0
+
+        while True:
+            url = f"{base_url}/dependabot/alerts?per_page={per_page}&page={page}"
+            response = self._make_request(url, token)
+
+            if not isinstance(response, list):
+                return False
+
+            for alert in response:
+                if alert.get("state") == "open":
+                    open_alerts += 1
+                else:
+                    closed_alerts += 1
+
+            if len(response) < per_page:
+                break
+
+            page += 1
+
+        return {
+            "metrics": ["security_alerts_open", "security_alerts_closed"],
+            "values": [open_alerts, closed_alerts],
+        }
+
     def _check_requests(self, base_url, params, values, token=None):
         results = []
         for value in values:
@@ -155,6 +193,14 @@ class ParserGithub(GenericStaticABC):
         if return_of_get_ci_feedback_times:
             metrics.extend(return_of_get_ci_feedback_times["metrics"])
             values.extend(return_of_get_ci_feedback_times["values"])
+
+        return_of_get_security_alerts = self._get_security_alerts(
+            url, token_from_github
+        )
+
+        if return_of_get_security_alerts:
+            metrics.extend(return_of_get_security_alerts["metrics"])
+            values.extend(return_of_get_security_alerts["values"])
 
         return {"metrics": metrics, "values": values, "file_paths": keys}
 
