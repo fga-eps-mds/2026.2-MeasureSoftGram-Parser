@@ -131,3 +131,96 @@ def test_make_request_returns_empty_dict_on_request_exception():
         side_effect=requests.exceptions.ConnectionError,
     ):
         assert parser._make_request(BASE_URL) == {}
+
+
+# Security alerts (SCM)
+
+def _parser_with_alerts(alert_pages):
+    """Parser cujo _make_request responde as paginas de alertas informadas e
+    delega o resto para o mock geral."""
+    parser = ParserGithub()
+
+    def request(url, token=None):
+        if "/dependabot/alerts" in url:
+            page = int(url.split("&page=")[1])
+            return alert_pages[page - 1]
+        return mock_requests(url, token)
+
+    parser._make_request = request
+    return parser
+
+
+def test_get_security_alerts_counts_open_and_closed():
+    parser = _parser_with_alerts([
+        [
+            {"number": 1, "state": "open"},
+            {"number": 2, "state": "fixed"},
+            {"number": 3, "state": "dismissed"},
+            {"number": 4, "state": "open"},
+        ]
+    ])
+
+    assert parser._get_security_alerts(BASE_URL) == {
+        "metrics": ["security_alerts_open", "security_alerts_closed"],
+        "values": [2, 2],
+    }
+
+
+def test_get_security_alerts_without_alerts_returns_zeros():
+    """Repositorio sem alerta algum e resposta valida, diferente de alerta
+    indisponivel."""
+    parser = _parser_with_alerts([[]])
+
+    assert parser._get_security_alerts(BASE_URL)["values"] == [0, 0]
+
+
+def test_get_security_alerts_paginates():
+    parser = _parser_with_alerts([
+        [{"number": index, "state": "open"} for index in range(100)],
+        [{"number": 100, "state": "fixed"}],
+    ])
+
+    assert parser._get_security_alerts(BASE_URL)["values"] == [100, 1]
+
+
+@pytest.mark.parametrize("unavailable_response", [{}, None, {"message": "Forbidden"}])
+def test_get_security_alerts_returns_false_when_unavailable(unavailable_response):
+    """Sem Dependabot habilitado ou sem permissao de security_events a API
+    responde 403/404 e _make_request devolve {}; a extracao segue sem as
+    metricas."""
+    parser = _parser_with_alerts([unavailable_response])
+
+    assert parser._get_security_alerts(BASE_URL) is False
+
+
+def test_extract_includes_security_alert_metrics():
+    parser = _parser_with_alerts([
+        [{"number": 1, "state": "open"}, {"number": 2, "state": "fixed"}]
+    ])
+
+    extracted = parser.extract(**{
+        "input_file": "fga-eps-mds/MeasureSoftGram-DOC",
+        "filters": {"labels": "US",
+                    "workflows": ["pages build and deployment"],
+                    "dates": None}
+    })
+
+    metrics = dict(zip(extracted["metrics"], extracted["values"]))
+
+    assert metrics["security_alerts_open"] == 1
+    assert metrics["security_alerts_closed"] == 1
+
+
+def test_extract_without_security_alerts_keeps_the_other_metrics():
+    parserObject = get_object()
+
+    extracted = parserObject.extract(**{
+        "input_file": "fga-eps-mds/MeasureSoftGram-DOC",
+        "filters": {"labels": "US",
+                    "workflows": ["pages build and deployment"],
+                    "dates": None}
+    })
+
+    assert "security_alerts_open" not in extracted["metrics"]
+    assert "total_issues" in extracted["metrics"]
+    assert "sum_ci_feedback_times" in extracted["metrics"]
