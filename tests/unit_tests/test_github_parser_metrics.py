@@ -1,6 +1,6 @@
 import os
 import pytest
-from genericparser.plugins.dinamic.github import ParserGithub
+from genericparser.plugins.dinamic.github import GithubConnectionError, ParserGithub
 from tests.mockfiles.expected_return_values import (
     EXPECT_EXTRACT_METRICS,
     EXPECT_EXTRACT_METRICS_DATE_NONE,
@@ -123,13 +123,21 @@ def test_token_falls_back_to_instance_when_no_dict_token_and_no_env():
     assert captured["token"] == "instance-token"
 
 
-def test_make_request_returns_empty_dict_on_request_exception():
+def test_make_request_raises_on_request_exception():
     parser = ParserGithub()
 
     with patch(
         "genericparser.plugins.dinamic.github.requests.get",
         side_effect=requests.exceptions.ConnectionError,
-    ):
+    ), pytest.raises(GithubConnectionError):
+        parser._make_request(BASE_URL)
+
+
+def test_make_request_returns_empty_dict_on_http_error():
+    parser = ParserGithub()
+    response = type("Response", (), {"status_code": 404})()
+
+    with patch("genericparser.plugins.dinamic.github.requests.get", return_value=response):
         assert parser._make_request(BASE_URL) == {}
 
 

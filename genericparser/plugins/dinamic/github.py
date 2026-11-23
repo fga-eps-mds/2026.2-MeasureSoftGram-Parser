@@ -7,6 +7,15 @@ GITHUB_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 FILTER_DATE_FORMAT = "%d/%m/%Y"
 
 
+class GithubConnectionError(Exception):
+    """A API do GitHub nao respondeu (rede fora, DNS, timeout).
+
+    Diferente de um 403/404, que e resposta valida e deixa so a medida
+    dependente de fora: sem conexao, toda metrica sairia zerada como se o
+    repositorio nao tivesse atividade.
+    """
+
+
 class ParserGithub(GenericStaticABC):
     token = None
 
@@ -22,8 +31,8 @@ class ParserGithub(GenericStaticABC):
             headers["Authorization"] = f"Bearer {token}"
         try:
             response = requests.get(url, headers=headers)
-        except requests.exceptions.RequestException:
-            return {}
+        except requests.exceptions.RequestException as error:
+            raise GithubConnectionError(f"Nao foi possivel acessar a API do GitHub ({url})") from error
         return response.json() if response.status_code == 200 else {}
 
     def _should_compute_workflow_run(self, run, filters):
